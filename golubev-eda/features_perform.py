@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 def extract_features(audio_path: str) -> dict:
     try:
-        y, sr = librosa.load(audio_path, duration=60)
+        y, sr = librosa.load(audio_path)
         features = {}
 
         filename = os.path.basename(audio_path)
@@ -33,9 +33,10 @@ def extract_features(audio_path: str) -> dict:
         features["energy_variance"] = float(np.std(rms))
         features["average_frequency"] = float(np.mean(librosa.feature.spectral_centroid(y=y, sr=sr)))
         features["zero_crossing"] = float(np.mean(librosa.feature.zero_crossing_rate(y)))
-        
+        print(f"Поймали {track_id}")
         return features
     except Exception:
+        print(f"Не поймали {track_id}")
         return None
 
 
@@ -46,7 +47,7 @@ def process_batch(audio_files):
 
 
 if __name__ == "__main__":
-    print("стартунули")
+    print("стартунули final")
     audio_folder = "C://Users//egorg//hse-ai-year-project-2025//downloaded_tracks//audio"
     csv_output = "C://Users//egorg//hse-ai-year-project-2025//audio_features_final.csv"
     
