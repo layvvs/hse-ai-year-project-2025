@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  music-recommendation:
+    image: music-recommendation-system:latest
+    ports:
+      - "6970:6970"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=6970
+    restart: unless-stopped
