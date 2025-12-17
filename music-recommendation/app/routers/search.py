@@ -4,19 +4,30 @@ from fastapi import (
     Request,
     HTTPException,
     Header,
+    Depends,
 )
+from app.vector_search.search import SearchEngine
+from app.vector_search.utils import Tags
 
 
 router = APIRouter(prefix='/search', tags=['search'])
 
 
+def get_search_engine(request: Request) -> SearchEngine:
+    return request.app.state.search_engine
+
+
 @router.post('/forward')
-async def handle_forward(request: Request):
+async def handle_forward(
+    request: Request,
+    search_engine: SearchEngine = Depends(get_search_engine)
+):
     try:
-        json_data = await request.json()
+        json_data: Tags = await request.json()
+        results = await search_engine.search(json_data)
+        return results
     except JSONDecodeError:
-        return HTTPException(status_code=400, detail="Некорректные данные")
-    return json_data
+        raise HTTPException(status_code=400, detail="Некорректные данные")
 
 
 @router.get('/history')
