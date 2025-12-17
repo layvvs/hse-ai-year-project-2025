@@ -1,10 +1,5 @@
 import os
-from dataclasses import dataclass
-
-@dataclass
-class AppConfig:
-    host: str
-    port: int
+from app.models.models import AppConfig
 
 
 def parse_config():
