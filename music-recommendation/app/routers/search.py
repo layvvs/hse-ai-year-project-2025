@@ -1,4 +1,9 @@
+from app.vector_search.search import SearchEngine
+from app.models.models import ForwardRequest
+
+
 from json import JSONDecodeError
+from pydantic import ValidationError
 from fastapi import (
     APIRouter,
     Request,
@@ -6,8 +11,6 @@ from fastapi import (
     Header,
     Depends,
 )
-from app.vector_search.search import SearchEngine
-from app.vector_search.utils import Tags
 
 
 router = APIRouter(prefix='/search', tags=['search'])
@@ -23,11 +26,20 @@ async def handle_forward(
     search_engine: SearchEngine = Depends(get_search_engine)
 ):
     try:
-        json_data: Tags = await request.json()
-        results = await search_engine.search(json_data)
+        search_params_raw = await request.json()
+        search_params = ForwardRequest(**search_params_raw)
+        results = await search_engine.search(search_params)
         return results
-    except JSONDecodeError:
-        raise HTTPException(status_code=400, detail="Некорректные данные")
+    except (JSONDecodeError, ValidationError):
+        raise HTTPException(
+            status_code=400,
+            detail='Некорректные данные, тело должно содержать ключи genres, instruments и tags типа array'
+        )
+    except Exception:
+        raise HTTPException(
+            status_code=403,
+            detail='Модель не смогла обработать данные'
+        )
 
 
 @router.get('/history')

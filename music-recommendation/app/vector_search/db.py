@@ -23,7 +23,7 @@ class Database:
             None,
             lambda: self.collection.query(
                 query_embeddings=[query_embedding],
-                n_results=6
+                n_results=5
             )
         )
 
@@ -42,6 +42,6 @@ class Database:
                     tags=self._convert_str_to_array(result['musicinfo.tags.vartags']),
                     confidence=1-distance
                 )
-                for distance, result in zip(search_results['distances'][0][1:], search_results['metadatas'][0][1:])
+                for distance, result in zip(search_results['distances'][0], search_results['metadatas'][0])
             ]
         )
