@@ -6,7 +6,7 @@ from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import parse_logging_config
-from app.utils.logging import logger
+from app.utils.logger import logger
 from app.database.models.route_logs_model import RouteLog
 from app.database.session import async_sessionmaker
 
