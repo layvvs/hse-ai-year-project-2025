@@ -27,6 +27,7 @@ elif env_default.exists():
 
 from app.database.session import Base
 from app.database.models.route_logs_model import RouteLog
+from app.database.models.users_model import User
 
 config = context.config
 

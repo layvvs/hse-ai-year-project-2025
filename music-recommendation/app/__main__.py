@@ -11,6 +11,7 @@ import uvicorn
 from app.core.config import parse_config
 from app.database.session import dispose_engine
 from app.routers.search import router
+from app.routers.auth import router as auth_router
 from app.vector_search.search import SearchEngine
 from app.utils.logger import logger
 
@@ -41,7 +42,7 @@ app.add_middleware(
 
 app.add_middleware(RequestLoggerMiddleware)
 app.include_router(router)
-
+app.include_router(auth_router)
 
 @app.get("/")
 async def root():
