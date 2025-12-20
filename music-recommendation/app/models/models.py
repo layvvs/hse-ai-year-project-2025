@@ -19,7 +19,3 @@ class SearchResult(BaseModel):
 class SearchResultsList(BaseModel):
     search_results: list[SearchResult]
 
-
-class AppConfig(BaseModel):
-    host: str
-    port: int

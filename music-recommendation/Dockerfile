@@ -4,6 +4,6 @@ WORKDIR /app
 
 COPY . .
 
-RUN pip3 install -r app/requirements.txt
+RUN pip install -r app/requirements.txt
 
-CMD ["python3", "-m", "app"]
+CMD ["sh", "-c", "cd app && alembic upgrade head && cd .. && python -m uvicorn app.__main__:app --host 0.0.0.0 --port 6970"]
