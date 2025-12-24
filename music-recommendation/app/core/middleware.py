@@ -1,14 +1,13 @@
-import time
-import asyncio
-from datetime import datetime, timezone
-from typing import Optional, Dict, Any
-from fastapi import Request, Response
-from starlette.middleware.base import BaseHTTPMiddleware
-
 from app.core.config import parse_logging_config
 from app.utils.logger import logger
 from app.database.models.route_logs_model import RouteLog
-from app.database.session import async_sessionmaker
+from app.database.session import session_maker
+
+import time
+import asyncio
+from datetime import datetime, timezone
+from fastapi import Request, Response
+from starlette.middleware.base import BaseHTTPMiddleware
 
 
 class RequestLoggerMiddleware(BaseHTTPMiddleware):
@@ -65,7 +64,7 @@ class RequestLoggerMiddleware(BaseHTTPMiddleware):
 
     async def save_route_log(self, route_log: RouteLog):
         try:
-            async with AsyncSessionLocal() as session:
+            async with session_maker() as session:
                 session.add(route_log)
                 await session.commit()
 

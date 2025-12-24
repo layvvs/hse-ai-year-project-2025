@@ -34,5 +34,6 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
         finally:
             await session.close()
 
+
 async def dispose_engine():
     await engine.dispose()

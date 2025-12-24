@@ -30,7 +30,7 @@ class LoggingConfig(BaseModel):
 def parse_config() -> AppConfig:
     return AppConfig(
         host=os.getenv('HOST', '0.0.0.0'),
-        port=os.getenv('PORT', 6969)
+        port=os.getenv('PORT', 6970)
     )
 
 
