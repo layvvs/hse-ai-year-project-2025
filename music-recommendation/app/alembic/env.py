@@ -36,24 +36,24 @@ if config.config_file_name is not None:
 
 
 def get_db_url():
-    migration_url = os.getenv("MIGRATION_DATABASE_URL")
+    migration_url = os.getenv('MIGRATION_DATABASE_URL')
 
     return migration_url
 
 
 db_url = get_db_url()
-config.set_main_option("sqlalchemy.url", db_url)
+config.set_main_option('sqlalchemy.url', db_url)
 
 target_metadata = Base.metadata
 
 
 def run_migrations_offline():
-    url = config.get_main_option("sqlalchemy.url")
+    url = config.get_main_option('sqlalchemy.url')
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
-        dialect_opts={"paramstyle": "named"},
+        dialect_opts={'paramstyle': 'named'},
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -62,7 +62,7 @@ def run_migrations_offline():
 def run_migrations_online():
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
+        prefix='sqlalchemy.',
         poolclass=pool.NullPool,
     )
     with connectable.connect() as connection:

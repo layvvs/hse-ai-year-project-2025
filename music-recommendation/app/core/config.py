@@ -21,13 +21,13 @@ class DatabaseConfig(BaseModel):
 
 class LoggingConfig(BaseModel):
     enable_request_logging: bool = True
-    log_blacklist: list[str] = ["/history"]
+    log_blacklist: list[str] = ['/history']
     max_error_length: int = 1000
 
 
 class SecurityConfig(BaseModel):
     secret_key: str
-    algorithm: str = "HS256"
+    algorithm: str = 'HS256'
     access_token_expire_minutes: int = 30
     prod_domain: Optional[str] = None
 

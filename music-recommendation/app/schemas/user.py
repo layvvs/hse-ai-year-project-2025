@@ -1,8 +1,10 @@
 from pydantic import BaseModel, ConfigDict
 
+
 class UserAuthSchema(BaseModel):
     username: str
     password: str
+
 
 class UserReadSchema(BaseModel):
     id: int

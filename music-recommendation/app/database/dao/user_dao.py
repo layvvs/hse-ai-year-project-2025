@@ -2,6 +2,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database.models.users_model import User
 
+
 class UserDAO:
     @classmethod
     async def find_by_username(cls, session: AsyncSession, username: str):
