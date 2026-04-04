@@ -7,6 +7,12 @@ from sklearn.metrics.pairwise import cosine_similarity
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
 
 
+def _to_csr(user_item_matrix):
+    if hasattr(user_item_matrix, "tocsr"):
+        return user_item_matrix.tocsr()
+    return csr_matrix(user_item_matrix)
+
+
 class ItemKNN:
     def __init__(self):
         self.similarity_matrix = None
@@ -51,10 +57,90 @@ class UserKNN:
         return [id2item[i] for i in top_k_idx]
 
 
-def _to_csr(user_item_matrix):
-    if hasattr(user_item_matrix, "tocsr"):
-        return user_item_matrix.tocsr()
-    return csr_matrix(user_item_matrix)
+class TopPopular:
+    def __init__(self):
+        self._item_order = None
+
+    def fit(self, user_item_matrix):
+        R = _to_csr(user_item_matrix)
+        col_pop = np.array(R.sum(axis=0)).ravel()
+        self._item_order = np.argsort(-col_pop)
+
+    def predict(self, user_id, user_item_matrix, user2id, id2item, k=10):
+        if self._item_order is None:
+            raise RuntimeError("fit algorithm!")
+
+        u = user2id[user_id]
+        seen = set(user_item_matrix[u].nonzero()[1])
+        out = []
+        for idx in self._item_order:
+            if int(idx) in seen:
+                continue
+            out.append(id2item[int(idx)])
+            if len(out) >= k:
+                break
+        return out
+
+
+class TopPersonal(UserKNN):
+    ...
+
+
+class TopPersonalTopPopular:
+    def __init__(self, personal=None, personal_fraction=0.5):
+        self.personal = personal if personal is not None else TopPersonal()
+        self.personal_fraction = personal_fraction
+        self.popular = TopPopular()
+
+    def clear(self):
+        if hasattr(self.personal, "clear"):
+            self.personal.clear()
+        if hasattr(self.popular, "clear"):
+            self.popular.clear()
+
+    def fit(self, user_item_matrix):
+        self.personal.fit(user_item_matrix)
+        self.popular.fit(user_item_matrix)
+
+    def predict(self, user_id, user_item_matrix, user2id, id2item, k=10):
+        u = user2id[user_id]
+        seen_ids = {id2item[int(j)] for j in user_item_matrix[u].nonzero()[1]}
+
+        k_pers = max(1, int(round(k * self.personal_fraction)))
+        k_pop = max(0, k - k_pers)
+
+        n_cand = min(max(k * 5, k + 20), user_item_matrix.shape[1])
+        pers = self.personal.predict(
+            user_id, user_item_matrix, user2id, id2item, k=n_cand
+        )
+        pop = self.popular.predict(
+            user_id, user_item_matrix, user2id, id2item, k=n_cand
+        )
+
+        out = []
+        used = set()
+
+        def take(candidates, target_len):
+            for item in candidates:
+                if len(out) >= target_len:
+                    break
+                if item in seen_ids or item in used:
+                    continue
+                used.add(item)
+                out.append(item)
+
+        if k_pop == 0:
+            take(pers, k)
+        else:
+            take(pers, k_pers)
+            take(pop, k)
+
+        if len(out) < k:
+            take(pop, k)
+        if len(out) < k:
+            take(pers, k)
+
+        return out[:k]
 
 
 def _positive_only_csr(R):
