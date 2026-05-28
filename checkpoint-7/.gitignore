@@ -1,0 +1,4 @@
+frontend/data/user_history/
+__pycache__/
+.venv/
+venv/
