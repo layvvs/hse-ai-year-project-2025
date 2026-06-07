@@ -63,7 +63,6 @@ def ndcg_at_k(test_true, user_item_matrix, user2id, id2item, k=10, recommend_fn=
 
 
 def average_precision_at_k(recs, true_items, k):
-    """AP@k: среднее по позициям релевантных объектов precision@i, нормировка min(|true|, k)."""
     if not true_items:
         return 0.0
     hits = 0
@@ -77,7 +76,6 @@ def average_precision_at_k(recs, true_items, k):
 
 
 def map_at_k(test_true, user_item_matrix, user2id, id2item, k=10, recommend_fn=None):
-    """Mean Average Precision @ k по пользователям (пользователи без релевантных в тесте пропускаются)."""
     aps = []
     for uid, true_items in test_true.items():
         if not true_items:
@@ -88,7 +86,6 @@ def map_at_k(test_true, user_item_matrix, user2id, id2item, k=10, recommend_fn=N
 
 
 def hit_rate_at_k(test_true, user_item_matrix, user2id, id2item, k=10, recommend_fn=None):
-    """Доля пользователей (с непустым тестом), у которых в топ-k есть хотя бы один релевантный айтем."""
     hits = 0
     users = 0
     for uid, true_items in test_true.items():
