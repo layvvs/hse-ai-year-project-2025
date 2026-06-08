@@ -10,6 +10,7 @@ import pandas as pd
 from scipy.sparse import load_npz
 
 from app.recommendations.models import ELSA
+from app.cold_start.model import ColdStartModel
 
 ROOT = Path(__file__).resolve().parent
 
@@ -42,10 +43,10 @@ UI_FEATURE_COLS = [
 
 class FeatureStore:
     def __init__(
-        self,
-        user_features: pd.DataFrame,
-        item_features: pd.DataFrame,
-        ui_features: pd.DataFrame,
+            self,
+            user_features: pd.DataFrame,
+            item_features: pd.DataFrame,
+            ui_features: pd.DataFrame,
     ):
         self.user_features = user_features.set_index("uid")
         self.item_features = item_features.set_index("item_id")
@@ -77,14 +78,15 @@ class FeatureStore:
 
 class RecommendationEngine:
     def __init__(
-        self,
-        elsa: ELSA,
-        reranker_model: lgb.Booster,
-        feature_cols: list[str],
-        user_item_matrix,
-        user2id: dict,
-        id2item: dict,
-        feature_store: FeatureStore,
+            self,
+            elsa: ELSA,
+            reranker_model: lgb.Booster,
+            feature_cols: list[str],
+            user_item_matrix,
+            user2id: dict,
+            id2item: dict,
+            feature_store: FeatureStore,
+            cold_start: ColdStartModel,
     ):
         self.elsa = elsa
         self.reranker_model = reranker_model
@@ -93,10 +95,24 @@ class RecommendationEngine:
         self.user2id = user2id
         self.id2item = id2item
         self.feature_store = feature_store
+        self.cold_start = cold_start
 
     def recommend(self, uid: int, k: int = DEFAULT_K) -> list[dict]:
         if uid not in self.user2id:
-            raise KeyError(f"uid={uid} не найден в mappings")
+            recs = self.cold_start.recommend(uid=uid, k=k)
+
+            # тут нужно как то подумать как с фронта получать интеракции пока сделаю просто листен
+            for rec in recs:
+                self.cold_start.add_event(
+                    uid=uid,
+                    item_id=rec["item_id"],
+                    event_type="listen",
+                    played_ratio_pct=None,
+                    track_length_seconds=None,
+                    is_organic=False,
+                )
+
+            return recs
 
         item_ids = self.elsa.predict(
             uid, self.user2id, self.id2item, k=CANDIDATE_K
@@ -106,6 +122,7 @@ class RecommendationEngine:
 
         candidates = self.feature_store.build_candidates_frame(uid, item_ids)
         scores = self.reranker_model.predict(candidates[self.feature_cols])
+
         ranked = (
             candidates.assign(score=scores)
             .sort_values("score", ascending=False)
@@ -120,6 +137,24 @@ class RecommendationEngine:
             }
             for i, row in enumerate(ranked.itertuples(index=False))
         ]
+
+    def add_interaction(
+            self,
+            uid: int,
+            item_id: int,
+            event_type: str,
+            played_ratio_pct: int | None = None,
+            track_length_seconds: int | None = None,
+            is_organic: bool = False,
+    ):
+        self.cold_start.add_event(
+            uid=uid,
+            item_id=item_id,
+            event_type=event_type,
+            played_ratio_pct=played_ratio_pct,
+            track_length_seconds=track_length_seconds,
+            is_organic=is_organic,
+        )
 
 
 def _fill_ui_defaults(df: pd.DataFrame) -> pd.DataFrame:
@@ -152,9 +187,9 @@ def _bootstrap_features_from_csv() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataF
 
 
 def _extend_user_features(
-    user_features: pd.DataFrame,
-    matrix,
-    mappings: dict,
+        user_features: pd.DataFrame,
+        matrix,
+        mappings: dict,
 ) -> pd.DataFrame:
     id2user = mappings["id2user"]
     matrix_n_positive = np.asarray((matrix > 0).sum(axis=1)).ravel()
@@ -195,9 +230,9 @@ def _extend_user_features(
 
 
 def _extend_item_features(
-    item_features: pd.DataFrame,
-    matrix,
-    mappings: dict,
+        item_features: pd.DataFrame,
+        matrix,
+        mappings: dict,
 ) -> pd.DataFrame:
     id2item = mappings["id2item"]
     matrix_popularity = np.asarray(matrix.sum(axis=0)).ravel()
@@ -228,9 +263,9 @@ def _extend_item_features(
 
 
 def _extend_ui_features(
-    ui_features: pd.DataFrame,
-    matrix,
-    mappings: dict,
+        ui_features: pd.DataFrame,
+        matrix,
+        mappings: dict,
 ) -> pd.DataFrame:
     id2user = mappings["id2user"]
     id2item = mappings["id2item"]
@@ -286,6 +321,8 @@ def load_engine() -> RecommendationEngine:
     reranker_model = lgb.Booster(model_file=str(RERANKER_PATH))
     feature_store = FeatureStore.from_artifacts(matrix, mappings)
 
+    cold_start = ColdStartModel()
+
     return RecommendationEngine(
         elsa=elsa,
         reranker_model=reranker_model,
@@ -294,4 +331,5 @@ def load_engine() -> RecommendationEngine:
         user2id=mappings["user2id"],
         id2item=mappings["id2item"],
         feature_store=feature_store,
+        cold_start=cold_start,
     )
