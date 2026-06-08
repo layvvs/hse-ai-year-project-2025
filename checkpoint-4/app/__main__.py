@@ -12,7 +12,7 @@ from app.core.config import parse_config
 from app.database.session import dispose_engine
 from app.routers.search import router
 from app.routers.auth import router as auth_router
-from app.vector_search.search import SearchEngine
+from app.recommendations.search import SearchEngine
 from app.utils.logger import logger
 
 

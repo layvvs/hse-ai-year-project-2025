@@ -1,4 +1,4 @@
-from app.vector_search.search import SearchEngine
+from app.recommendations.search import SearchEngine
 from app.models.models import ForwardRequest
 
 
@@ -38,8 +38,10 @@ async def handle_forward(
     except (JSONDecodeError, ValidationError):
         raise HTTPException(
             status_code=400,
-            detail='Некорректные данные, тело должно содержать ключи genres, instruments и tags типа array'
+            detail='Некорректные данные, тело должно содержать uid (int) и опционально k (1-100)'
         )
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
     except Exception:
         raise HTTPException(
             status_code=403,
